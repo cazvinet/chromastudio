@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caz Placement Drum</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            /* Material 3 Expressive - Dark Theme - Pastel Pink Accent */
+            --md-sys-color-background: #151214;
+            --md-sys-color-on-background: #e9e0e3;
+            --md-sys-color-surface: #151214;
+            --md-sys-color-surface-container: #221d20;
+            --md-sys-color-surface-container-high: #2d272a;
+            --md-sys-color-surface-container-highest: #383235;
+            --md-sys-color-primary: #ffb1c8; /* Pastel Pink */
+            --md-sys-color-on-primary: #5e1133;
+            --md-sys-color-primary-container: #7d294a;
+            --md-sys-color-on-primary-container: #ffd9e2;
+            --md-sys-color-secondary: #e0bada;
+            --md-sys-color-outline: #948f91;
+            
+            /* Drum Colors - Pastel / Materialized */
+            --kick: #ffb1c8;
+            --snare: #b1ccff;
+            --clap: #ddb1ff;
+            --chat: #ffe6b1;
+            --ohat: #ffceb1;
+            --perc: #b1ffce;
+            --ride: #b1f0ff;
+
+            font-family: 'Roboto', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-background);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- HEADER --- */
+        header {
+            padding: 20px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--md-sys-color-surface-container);
+            border-bottom: 1px solid var(--md-sys-color-surface-container-high);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .title { 
+            font-size: 1.8rem; 
+            font-weight: 700; 
+            color: var(--md-sys-color-primary); 
+            letter-spacing: -0.5px; 
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .controls { display: flex; gap: 16px; align-items: center; }
+
+        select, .bpm-box {
+            background: var(--md-sys-color-surface-container-high);
+            color: var(--md-sys-color-on-background);
+            border: 1px solid var(--md-sys-color-surface-container-highest);
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 1rem;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Roboto', sans-serif;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+        select:hover { border-color: var(--md-sys-color-primary); }
+        
+        .bpm-box { cursor: default; display: flex; align-items: center; gap: 8px; font-weight: 500; }
+        .bpm-val { color: var(--md-sys-color-primary); font-family: 'JetBrains Mono', monospace; font-size: 1.1rem;}
+
+        /* --- LAYOUT --- */
+        main { display: flex; flex: 1; padding: 24px; gap: 24px; overflow: hidden; }
+
+        .card {
+            background: var(--md-sys-color-surface-container);
+            border-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            border: 1px solid var(--md-sys-color-surface-container-highest);
+            overflow: hidden;
+        }
+
+        /* --- SEQUENCER & TIPS --- */
+        .left-panel { flex: 1; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; padding-right: 8px;}
+        .sequencer-card { padding: 24px 32px; flex: none;}
+        .tips-card { padding: 24px 32px; background: rgba(255, 177, 200, 0.05); border: 1px solid var(--md-sys-color-primary-container); flex: none;}
+        
+        .card-title { font-size: 1.3rem; font-weight: 500; margin-bottom: 24px; color: var(--md-sys-color-secondary); }
+        .tips-title { font-size: 1.1rem; color: var(--md-sys-color-primary); margin-bottom: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px;}
+
+        .timeline-header {
+            display: grid;
+            grid-template-columns: 120px repeat(16, 1fr);
+            gap: 8px;
+            padding-bottom: 12px;
+            color: var(--md-sys-color-outline);
+            font-size: 0.85rem;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .timeline-header div:nth-child(4n+2) { color: var(--md-sys-color-primary); font-weight: bold; font-size: 1rem;}
+
+        .track {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            background: var(--md-sys-color-surface-container-high);
+            border-radius: 20px;
+            padding: 8px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            border: 1px solid transparent;
+        }
+        .track:hover { background: var(--md-sys-color-surface-container-highest); transform: translateX(4px); }
+        .track.selected { border-color: var(--md-sys-color-primary); background: rgba(255, 177, 200, 0.05); }
+
+        .track-name {
+            width: 112px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            padding-left: 16px;
+            letter-spacing: 0.5px;
+            color: var(--md-sys-color-on-background);
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 8px;
+            flex: 1;
+            pointer-events: none;
+        }
+
+        .step {
+            aspect-ratio: 1;
+            background: var(--md-sys-color-surface);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.02);
+            transition: all 0.2s;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .track.kick .step.active { background: var(--kick); box-shadow: 0 0 16px rgba(255,177,200,0.3), inset 0 2px 4px rgba(255,255,255,0.4); border-color: #fff; }
+        .track.snare .step.active { background: var(--snare); box-shadow: 0 0 16px rgba(177,204,255,0.3), inset 0 2px 4px rgba(255,255,255,0.4); border-color: #fff;}
+        .track.clap .step.active { background: var(--clap); box-shadow: 0 0 16px rgba(221,177,255,0.3), inset 0 2px 4px rgba(255,255,255,0.4); border-color: #fff;}
+        .track.chat .step.active { background: var(--chat); box-shadow: 0 0 16px rgba(255,230,177,0.3), inset 0 2px 4px rgba(255,255,255,0.6); border-color: #fff;}
+        .track.ohat .step.active { background: var(--ohat); box-shadow: 0 0 16px rgba(255,206,177,0.3), inset 0 2px 4px rgba(255,255,255,0.6); border-color: #fff;}
+        .track.perc .step.active { background: var(--perc); box-shadow: 0 0 16px rgba(177,255,206,0.3), inset 0 2px 4px rgba(255,255,255,0.4); border-color: #fff;}
+        .track.ride .step.active { background: var(--ride); box-shadow: 0 0 16px rgba(177,240,255,0.3), inset 0 2px 4px rgba(255,255,255,0.6); border-color: #fff;}
+
+        /* --- OPERATOR UI --- */
+        .operator-card { width: 500px; display: flex; flex-direction: column; background: #181617; flex: none; }
+        
+        .op-header {
+            padding: 24px;
+            background: var(--md-sys-color-surface-container-high);
+            border-bottom: 1px solid var(--md-sys-color-primary-container);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .op-title-row { display: flex; justify-content: space-between; align-items: center; }
+        .op-title { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.4rem; letter-spacing: -0.5px; }
+        .color-dot { width: 18px; height: 18px; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
+        
+        .algo-badge { 
+            background: rgba(255, 177, 200, 0.1); 
+            color: var(--md-sys-color-primary); 
+            padding: 6px 12px; 
+            border-radius: 8px; 
+            font-family: 'JetBrains Mono', monospace; 
+            font-size: 0.8rem; 
+            border: 1px solid rgba(255, 177, 200, 0.3);
+        }
+
+        .op-body {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            padding: 16px;
+            gap: 16px;
+            background: #110f10;
+            overflow-y: auto;
+        }
+
+        .op-lcd {
+            background: #0a0909;
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            border: 2px solid #2d272a;
+            box-shadow: inset 0 4px 20px rgba(0,0,0,0.8);
+            position: relative;
+        }
+        
+        .lcd-header { display: flex; justify-content: space-between; margin-bottom: 16px; }
+        .lcd-title { color: var(--md-sys-color-primary); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; text-shadow: 0 0 5px var(--md-sys-color-primary); }
+        
+        .env-graph { height: 100px; position: relative; border-bottom: 1px solid #332d30; border-left: 1px solid #332d30; margin-bottom: 16px;}
+        .env-line { position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; overflow: visible; }
+        
+        .env-dials { display: flex; justify-content: space-between; }
+        
+        .modules-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .op-module {
+            background: #1f1b1d;
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #332d30;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .op-module.active-mod { border-color: var(--md-sys-color-primary); background: #262023; box-shadow: 0 4px 12px rgba(255,177,200,0.05); }
+        .op-module.disabled-mod { opacity: 0.4; filter: grayscale(100%); }
+        
+        .mod-title { font-size: 0.75rem; color: #a39c9f; font-weight: 700; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 1px;}
+        .mod-title span { color: var(--md-sys-color-primary); }
+        
+        .dial-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .dial { display: flex; flex-direction: column; align-items: flex-start; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px;}
+        .dial-val { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--md-sys-color-on-background); font-weight: bold;}
+        .dial-lbl { font-size: 0.65rem; color: var(--md-sys-color-outline); margin-top: 2px; text-transform: uppercase; }
+
+        .desc-box {
+            background: rgba(255, 177, 200, 0.08);
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            color: var(--md-sys-color-on-primary-container);
+            line-height: 1.5;
+            border-left: 4px solid var(--md-sys-color-primary);
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="title">Caz Placement Drum</div>
+        <div class="controls">
+            <select id="genre-select"></select>
+            <select id="pattern-select"></select>
+            <div class="bpm-box">
+                BPM <span class="bpm-val" id="bpm-val">140</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="left-panel">
+            <!-- SEQUENCER -->
+            <div class="card sequencer-card">
+                <div class="card-title">Timeline & Grooves</div>
+                <div class="timeline-header" id="t-head">
+                    <div></div>
+                    <!-- 16 steps -->
+                </div>
+                <div id="tracks-container"></div>
+            </div>
+
+            <!-- TIPS PANEL -->
+            <div class="card tips-card">
+                <div class="tips-title">💡 Conseils de production pour ce style</div>
+                <div id="genre-tips" style="line-height: 1.6; color: var(--md-sys-color-on-background); font-size: 0.95rem;">
+                    Sélectionne un genre pour voir les conseils.
+                </div>
+            </div>
+        </div>
+
+        <!-- OPERATOR UI -->
+        <div class="card operator-card">
+            <div class="op-header">
+                <div class="op-title-row">
+                    <div class="op-title">
+                        <div class="color-dot" id="op-dot" style="background:var(--kick)"></div>
+                        <span id="op-name">Kick Drum</span>
+                    </div>
+                    <div class="algo-badge" id="algo-box">Algo 1</div>
+                </div>
+            </div>
+            
+            <div class="op-body">
+                <div class="desc-box" id="op-desc">Description text.</div>
+
+                <div class="op-lcd">
+                    <div class="lcd-header">
+                        <div class="lcd-title">ENV > OSCILLATOR A</div>
+                    </div>
+                    
+                    <div class="env-graph">
+                        <svg class="env-line" preserveAspectRatio="none" viewBox="0 0 100 100">
+                            <defs>
+                                <filter id="glow">
+                                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                                    <feMerge>
+                                        <feMergeNode in="coloredBlur"/>
+                                        <feMergeNode in="SourceGraphic"/>
+                                    </feMerge>
+                                </filter>
+                            </defs>
+                            <path id="env-path" d="M 0 100 L 5 0 L 20 40 L 80 40 L 100 100" fill="rgba(255,177,200,0.15)" stroke="var(--md-sys-color-primary)" stroke-width="2" filter="url(#glow)"/>
+                        </svg>
+                    </div>
+                    
+                    <div class="env-dials">
+                        <div class="dial"><span class="dial-val" id="env-att">0.0ms</span><span class="dial-lbl">Attack</span></div>
+                        <div class="dial"><span class="dial-val" id="env-dec">600ms</span><span class="dial-lbl">Decay</span></div>
+                        <div class="dial"><span class="dial-val" id="env-sus">-inf</span><span class="dial-lbl">Sustain</span></div>
+                        <div class="dial"><span class="dial-val" id="env-rel">50ms</span><span class="dial-lbl">Release</span></div>
+                    </div>
+                </div>
+
+                <div class="modules-grid">
+                    <div class="op-module active-mod" id="mod-a">
+                        <div class="mod-title">Oscillator <span>A</span></div>
+                        <div class="dial-grid">
+                            <div class="dial"><span class="dial-val" id="a-crs">1</span><span class="dial-lbl">Coarse</span></div>
+                            <div class="dial"><span class="dial-val" id="a-lvl">0dB</span><span class="dial-lbl">Level</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="op-module" id="mod-b">
+                        <div class="mod-title">Oscillator <span>B</span></div>
+                        <div class="dial-grid">
+                            <div class="dial"><span class="dial-val" id="b-crs">1</span><span class="dial-lbl">Coarse</span></div>
+                            <div class="dial"><span class="dial-val" id="b-lvl">-inf</span><span class="dial-lbl">Level</span></div>
+                        </div>
+                    </div>
+
+                    <div class="op-module active-mod">
+                        <div class="mod-title">Filter</div>
+                        <div class="dial-grid">
+                            <div class="dial"><span class="dial-val" id="flt-type">Lowpass</span><span class="dial-lbl">Type</span></div>
+                            <div class="dial"><span class="dial-val" id="flt-freq">800 Hz</span><span class="dial-lbl">Freq</span></div>
+                            <div class="dial" style="grid-column: span 2"><span class="dial-val" id="flt-res">0.5</span><span class="dial-lbl">Resonance</span></div>
+                        </div>
+                    </div>
+
+                    <div class="op-module active-mod">
+                        <div class="mod-title">Pitch Env</div>
+                        <div class="dial-grid">
+                            <div class="dial"><span class="dial-val" id="ptc-amt">+24 st</span><span class="dial-lbl">Amount</span></div>
+                            <div class="dial"><span class="dial-val" id="ptc-time">30 ms</span><span class="dial-lbl">Time</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        /* --- KITS DEFINITIONS (Dynamic Operator Settings) --- */
+        // We define specific synth architectures for different macro-genres.
+        const kits = {
+            techno: {
+                kick: { name: "Rumble Kick", algo: "Algo 8 (B->A)", desc: "Sub profond (Osc A) percuté par un pitch env très court. L'Osc B ajoute du grondement (rumble) via FM.", oscA: { crs: "Fixed 50Hz", lvl: "0.0dB", att: "0ms", dec: "400ms", sus: "-inf", rel: "10ms", d: "M 0 100 L 1 0 L 20 50 L 100 100" }, oscB: { crs: "0.5", lvl: "-12dB" }, flt: { type: "Lowpass 24", freq: "800Hz", res: "0.5" }, ptc: { amt: "+24st", time: "30ms" } },
+                snare: { name: "Punchy Snare", algo: "Algo 1 (Parallèle)", desc: "Mélange d'une onde tonique (Sine) et de bruit blanc sec.", oscA: { crs: "Fixed 200Hz", lvl: "-6dB", att: "1ms", dec: "150ms", sus: "-inf", rel: "20ms", d: "M 0 100 L 2 0 L 15 70 L 100 100" }, oscB: { crs: "Noise", lvl: "-3dB" }, flt: { type: "Bandpass", freq: "1.5kHz", res: "1.2" }, ptc: { amt: "0st", time: "0ms" } },
+                clap: { name: "Synth Clap", algo: "Algo 1", desc: "Bruit blanc bouclé avec une attaque légèrement retardée ou étagée.", oscA: { crs: "Noise L", lvl: "0dB", att: "10ms", dec: "350ms", sus: "-inf", rel: "50ms", d: "M 0 100 L 5 20 L 10 0 L 30 60 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Bandpass", freq: "2.0kHz", res: "1.5" }, ptc: { amt: "0st", time: "0ms" } },
+                chat: { name: "Closed Hat", algo: "Algo 1", desc: "Bruit blanc ultra sec coupé par un filtre passe-haut.", oscA: { crs: "Noise W", lvl: "0dB", att: "0ms", dec: "45ms", sus: "-inf", rel: "10ms", d: "M 0 100 L 1 0 L 10 100 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Highpass", freq: "6.5kHz", res: "0.8" }, ptc: { amt: "0st", time: "0ms" } },
+                ohat: { name: "Open Hat", algo: "Algo 1", desc: "Même timbre que le closed hat mais avec un long decay pour respirer.", oscA: { crs: "Noise W", lvl: "0dB", att: "5ms", dec: "400ms", sus: "-inf", rel: "50ms", d: "M 0 100 L 5 0 L 40 50 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Highpass", freq: "5.0kHz", res: "1.5" }, ptc: { amt: "0st", time: "0ms" } },
+                perc: { name: "FM Tom/Perc", algo: "Algo 8 (B->A)", desc: "Percussion très métallique générée par une forte modulation FM.", oscA: { crs: "1.0", lvl: "0dB", att: "1ms", dec: "200ms", sus: "-inf", rel: "20ms", d: "M 0 100 L 2 0 L 20 60 L 100 100" }, oscB: { crs: "3.0", lvl: "-8dB" }, flt: { type: "Lowpass 12", freq: "2.5kHz", res: "2.0" }, ptc: { amt: "+12st", time: "50ms" } },
+                ride: { name: "Techno Ride", algo: "Algo 8 (B->A)", desc: "Ondes carrées croisées en FM, générant un timbre de cymbale inharmonique.", oscA: { crs: "1.0 Sq", lvl: "-3dB", att: "2ms", dec: "800ms", sus: "-inf", rel: "100ms", d: "M 0 100 L 5 0 L 80 50 L 100 100" }, oscB: { crs: "3.41 Sq", lvl: "-10dB" }, flt: { type: "Highpass", freq: "3.5kHz", res: "0.5" }, ptc: { amt: "0st", time: "0ms" } }
+            },
+            trap: {
+                kick: { name: "808 Sub Kick", algo: "Algo 1", desc: "Basse 808 massive. L'enveloppe de volume est très longue. L'attaque rapide du pitch simule la batte.", oscA: { crs: "Fixed 40Hz", lvl: "0.0dB", att: "2ms", dec: "1500ms", sus: "0dB", rel: "300ms", d: "M 0 100 L 2 0 L 30 20 L 80 40 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Lowpass 24", freq: "400Hz", res: "0.2" }, ptc: { amt: "+12st", time: "40ms" } },
+                snare: { name: "Trap Snare", algo: "Algo 1", desc: "Caisse claire aigue et percutante, souvent pitchée haut.", oscA: { crs: "Fixed 250Hz", lvl: "-4dB", att: "0ms", dec: "100ms", sus: "-inf", rel: "10ms", d: "M 0 100 L 1 0 L 10 80 L 100 100" }, oscB: { crs: "Noise", lvl: "-2dB" }, flt: { type: "Bandpass", freq: "2.2kHz", res: "1.0" }, ptc: { amt: "+5st", time: "15ms" } },
+                clap: { name: "Crisp Clap", algo: "Algo 1", desc: "Clap très brillant et court, decay sec.", oscA: { crs: "Noise W", lvl: "0dB", att: "5ms", dec: "180ms", sus: "-inf", rel: "20ms", d: "M 0 100 L 2 20 L 5 0 L 20 80 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Highpass", freq: "1.5kHz", res: "0.5" }, ptc: { amt: "0st", time: "0ms" } },
+                chat: { name: "Ratchet Hat", algo: "Algo 1", desc: "Hi-hat ultra court pour permettre les rolls (ratchets) en 1/32 ou 1/64 sans baver.", oscA: { crs: "Noise W", lvl: "0dB", att: "0ms", dec: "25ms", sus: "-inf", rel: "5ms", d: "M 0 100 L 0 0 L 5 100 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Highpass", freq: "7.0kHz", res: "0.5" }, ptc: { amt: "0st", time: "0ms" } },
+                ohat: { name: "Sizzle Open Hat", algo: "Algo 1", desc: "Contre-temps brillant, decay modéré.", oscA: { crs: "Noise W", lvl: "0dB", att: "2ms", dec: "300ms", sus: "-inf", rel: "40ms", d: "M 0 100 L 2 0 L 30 60 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Highpass", freq: "6.0kHz", res: "1.0" }, ptc: { amt: "0st", time: "0ms" } },
+                perc: { name: "Rimshot / Wood", algo: "Algo 1", desc: "Son boisé court (Rimshot) typique de la Trap.", oscA: { crs: "Fixed 400Hz", lvl: "0dB", att: "1ms", dec: "60ms", sus: "-inf", rel: "10ms", d: "M 0 100 L 1 0 L 10 90 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Bandpass", freq: "800Hz", res: "2.5" }, ptc: { amt: "+7st", time: "10ms" } },
+                ride: { name: "Crash/Cymbal", algo: "Algo 8", desc: "Crash FM longue.", oscA: { crs: "1.0 Sq", lvl: "-5dB", att: "5ms", dec: "1200ms", sus: "-inf", rel: "200ms", d: "M 0 100 L 5 0 L 60 50 L 100 100" }, oscB: { crs: "2.71 Sq", lvl: "-8dB" }, flt: { type: "Highpass", freq: "4.0kHz", res: "0.2" }, ptc: { amt: "0st", time: "0ms" } }
+            },
+            boombap: {
+                kick: { name: "Thumpy Vinyl Kick", algo: "Algo 1", desc: "Kick chaud et étouffé (lowpass) simulant un sample vinyle. Un poil de bruit sur l'Osc B.", oscA: { crs: "Fixed 60Hz", lvl: "0.0dB", att: "2ms", dec: "350ms", sus: "-inf", rel: "20ms", d: "M 0 100 L 2 0 L 40 60 L 100 100" }, oscB: { crs: "Noise Pink", lvl: "-24dB" }, flt: { type: "Lowpass 12", freq: "300Hz", res: "0.0" }, ptc: { amt: "+10st", time: "25ms" } },
+                snare: { name: "Acoustic Snare", algo: "Algo 1", desc: "Snare simulant une caisse claire acoustique. Fondamentale autour de 180Hz.", oscA: { crs: "Fixed 180Hz", lvl: "-2dB", att: "2ms", dec: "200ms", sus: "-inf", rel: "30ms", d: "M 0 100 L 2 0 L 20 50 L 100 100" }, oscB: { crs: "Noise W", lvl: "-6dB" }, flt: { type: "Bandpass", freq: "1.0kHz", res: "0.8" }, ptc: { amt: "+3st", time: "20ms" } },
+                clap: { name: "Layered Clap", algo: "Algo 1", desc: "Clap organique, souvent superposé avec la snare.", oscA: { crs: "Noise L", lvl: "-4dB", att: "15ms", dec: "300ms", sus: "-inf", rel: "40ms", d: "M 0 100 L 10 20 L 15 0 L 40 70 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Bandpass", freq: "1.2kHz", res: "0.5" }, ptc: { amt: "0st", time: "0ms" } },
+                chat: { name: "Swing Hat", algo: "Algo 1", desc: "Charley chaud, un peu plus long, moins aigu que la Trap.", oscA: { crs: "Noise P", lvl: "0dB", att: "2ms", dec: "80ms", sus: "-inf", rel: "10ms", d: "M 0 100 L 2 0 L 15 80 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Bandpass", freq: "4.5kHz", res: "0.3" }, ptc: { amt: "0st", time: "0ms" } },
+                ohat: { name: "Loose Open Hat", algo: "Algo 1", desc: "Contre-temps très organique.", oscA: { crs: "Noise P", lvl: "0dB", att: "5ms", dec: "500ms", sus: "-inf", rel: "60ms", d: "M 0 100 L 5 0 L 50 50 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Bandpass", freq: "4.0kHz", res: "0.5" }, ptc: { amt: "0st", time: "0ms" } },
+                perc: { name: "Vinyl Crackle", algo: "Algo 1", desc: "Percussion simulant un craquement de vinyle continu ou rythmique.", oscA: { crs: "Noise W", lvl: "-15dB", att: "0ms", dec: "50ms", sus: "-inf", rel: "5ms", d: "M 0 100 L 0 0 L 5 95 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Highpass", freq: "2.0kHz", res: "0.0" }, ptc: { amt: "0st", time: "0ms" } },
+                ride: { name: "Jazzy Ride", algo: "Algo 8", desc: "Ride douce et jazz, beaucoup de sustain.", oscA: { crs: "1.0 Tri", lvl: "-6dB", att: "5ms", dec: "1000ms", sus: "-inf", rel: "300ms", d: "M 0 100 L 5 0 L 70 40 L 100 100" }, oscB: { crs: "4.21 Sq", lvl: "-15dB" }, flt: { type: "Bandpass", freq: "2.5kHz", res: "0.4" }, ptc: { amt: "0st", time: "0ms" } }
+            },
+            hyperpop: {
+                kick: { name: "Zappy Distorted Kick", algo: "Algo 8", desc: "Kick hyper agressif, très court (zappy), FM poussée. Decay très rapide pour laisser la place aux 808s.", oscA: { crs: "Fixed 65Hz", lvl: "0.0dB", att: "0ms", dec: "150ms", sus: "-inf", rel: "10ms", d: "M 0 100 L 0 0 L 10 60 L 100 100" }, oscB: { crs: "1.0", lvl: "-4dB" }, flt: { type: "Lowpass 24", freq: "2000Hz", res: "0.8" }, ptc: { amt: "+36st", time: "20ms" } },
+                snare: { name: "Metallic Snare", algo: "Algo 8", desc: "Caisse claire FM très aigüe et métallique, decay rapide.", oscA: { crs: "2.0", lvl: "0dB", att: "0ms", dec: "120ms", sus: "-inf", rel: "10ms", d: "M 0 100 L 0 0 L 10 80 L 100 100" }, oscB: { crs: "5.0", lvl: "0dB" }, flt: { type: "Highpass", freq: "1.0kHz", res: "0.5" }, ptc: { amt: "+12st", time: "15ms" } },
+                clap: { name: "Digital Clap", algo: "Algo 1", desc: "Clap bitcrushé et saturé.", oscA: { crs: "Noise W", lvl: "0dB", att: "2ms", dec: "200ms", sus: "-inf", rel: "20ms", d: "M 0 100 L 2 0 L 15 50 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Bandpass", freq: "3.0kHz", res: "2.0" }, ptc: { amt: "0st", time: "0ms" } },
+                chat: { name: "Glitch Hat", algo: "Algo 1", desc: "Hi-hat chirurgical, decay quasi nul.", oscA: { crs: "Noise W", lvl: "0dB", att: "0ms", dec: "15ms", sus: "-inf", rel: "2ms", d: "M 0 100 L 0 0 L 2 100 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Highpass", freq: "8.0kHz", res: "0.8" }, ptc: { amt: "0st", time: "0ms" } },
+                ohat: { name: "Splash Hat", algo: "Algo 1", desc: "Hat ouvert très synthétique et bruyant.", oscA: { crs: "Noise W", lvl: "0dB", att: "2ms", dec: "250ms", sus: "-inf", rel: "30ms", d: "M 0 100 L 2 0 L 20 50 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Highpass", freq: "4.5kHz", res: "1.5" }, ptc: { amt: "0st", time: "0ms" } },
+                perc: { name: "Laser Zap", algo: "Algo 1", desc: "FX de Zap classique (Pitch envelope négative rapide).", oscA: { crs: "Fixed 1kHz", lvl: "0dB", att: "0ms", dec: "100ms", sus: "-inf", rel: "10ms", d: "M 0 100 L 0 0 L 10 80 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Lowpass 12", freq: "5.0kHz", res: "0.0" }, ptc: { amt: "+48st", time: "50ms" } },
+                ride: { name: "White Noise Crash", algo: "Algo 1", desc: "Juste un gros souffle de bruit blanc pour les impacts.", oscA: { crs: "Noise W", lvl: "-6dB", att: "10ms", dec: "800ms", sus: "-inf", rel: "100ms", d: "M 0 100 L 10 0 L 50 50 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Bandpass", freq: "5.0kHz", res: "0.5" }, ptc: { amt: "0st", time: "0ms" } }
+            },
+            kpop: {
+                kick: { name: "EDM Punch Kick", algo: "Algo 1", desc: "Kick hybride très propre et compressé. Forte attaque (click) et sub contrôlé.", oscA: { crs: "Fixed 55Hz", lvl: "0.0dB", att: "0ms", dec: "300ms", sus: "-inf", rel: "15ms", d: "M 0 100 L 0 0 L 15 40 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Lowpass 24", freq: "1.2kHz", res: "0.3" }, ptc: { amt: "+24st", time: "25ms" } },
+                snare: { name: "Layered Pop Snare", algo: "Algo 1", desc: "Snare brillante, mélange d'acoustique (corps) et de bruit (clarté).", oscA: { crs: "Fixed 220Hz", lvl: "-3dB", att: "1ms", dec: "150ms", sus: "-inf", rel: "20ms", d: "M 0 100 L 1 0 L 15 60 L 100 100" }, oscB: { crs: "Noise W", lvl: "-4dB" }, flt: { type: "Bandpass", freq: "2.0kHz", res: "0.9" }, ptc: { amt: "+5st", time: "10ms" } },
+                clap: { name: "Wide Clap", algo: "Algo 1", desc: "Clap moderne avec une attaque légèrement diffuse.", oscA: { crs: "Noise L", lvl: "0dB", att: "12ms", dec: "250ms", sus: "-inf", rel: "30ms", d: "M 0 100 L 8 20 L 12 0 L 30 60 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Bandpass", freq: "2.5kHz", res: "1.2" }, ptc: { amt: "0st", time: "0ms" } },
+                chat: { name: "Crisp Hat", algo: "Algo 1", desc: "Charley très brillant et eq'ed dans les aigus (8kHz+).", oscA: { crs: "Noise W", lvl: "0dB", att: "1ms", dec: "50ms", sus: "-inf", rel: "10ms", d: "M 0 100 L 1 0 L 10 100 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Highpass", freq: "8.0kHz", res: "0.6" }, ptc: { amt: "0st", time: "0ms" } },
+                ohat: { name: "Sizzling Open Hat", algo: "Algo 1", desc: "Ouverture franche et propre.", oscA: { crs: "Noise W", lvl: "0dB", att: "3ms", dec: "350ms", sus: "-inf", rel: "40ms", d: "M 0 100 L 3 0 L 35 50 L 100 100" }, oscB: { crs: "-", lvl: "-inf" }, flt: { type: "Highpass", freq: "6.5kHz", res: "1.0" }, ptc: { amt: "0st", time: "0ms" } },
+                perc: { name: "Pop Pluck", algo: "Algo 8", desc: "Percussion très mélodique, style marimba ou synth pluck.", oscA: { crs: "1.0", lvl: "0dB", att: "1ms", dec: "300ms", sus: "-inf", rel: "30ms", d: "M 0 100 L 1 0 L 20 40 L 100 100" }, oscB: { crs: "2.0", lvl: "-12dB" }, flt: { type: "Lowpass 12", freq: "3.0kHz", res: "1.0" }, ptc: { amt: "0st", time: "0ms" } },
+                ride: { name: "Clean Ride", algo: "Algo 8", desc: "Ride EDM propre et phasée.", oscA: { crs: "1.0 Sq", lvl: "-6dB", att: "2ms", dec: "900ms", sus: "-inf", rel: "100ms", d: "M 0 100 L 2 0 L 60 50 L 100 100" }, oscB: { crs: "4.0 Sq", lvl: "-12dB" }, flt: { type: "Highpass", freq: "5.0kHz", res: "0.5" }, ptc: { amt: "0st", time: "0ms" } }
+            }
+        };
+
+        // If a genre doesn't have a specific kit defined, it defaults to techno
+        const mapGenreToKit = {
+            "Acidcore": "techno", "Gabber": "techno", "Acid Techno": "techno", "Peak Time": "techno", "Schranz": "techno", "Industrial": "techno", "Tekno / Tribe": "techno", "Raw Techno": "techno", "Hypnotic": "techno",
+            "Trap": "trap", "Drill": "trap", "Dubstep / Riddim": "trap",
+            "Boom Bap / Rap": "boombap", "Lo-Fi Hip Hop": "boombap",
+            "Hyperpop": "hyperpop",
+            "K-Pop (Hybrid)": "kpop", "Synthwave": "kpop", "Tech House": "kpop",
+            "Rawstyle": "techno"
+        };
+
+        /* --- ACCURATE DRUM PATTERNS & GENRE INFO --- */
+        const database = [
+            {
+                genre: "Acidcore", bpm: 155, kitMap: "techno",
+                tips: "Le secret de l'Acidcore réside dans le roulement (rumble). Alterne les Kicks avec des percussions FM (Toms) sur les contre-temps. Garde l'Osc A de ton kick très bas (50Hz) et laisse la TB-303 prendre la place au-dessus.",
+                patterns: [
+                    { name: "Mental Rolling", data: { kick: [0, 4, 8, 12], chat: [1,2,3, 5,6,7, 9,10,11, 13,14,15], ohat: [2, 6, 10, 14], perc: [3, 7, 11, 15] } },
+                    { name: "Breaky Tribe", data: { kick: [0, 4, 8, 12], chat: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], snare: [6, 14], perc: [2, 10] } }
+                ]
+            },
+            {
+                genre: "Gabber", bpm: 180, kitMap: "techno",
+                tips: "Distorsion maximum. Augmente le 'Level' de l'Osc B dans ton Kick Operator pour générer plus d'harmoniques avant de l'envoyer dans un plugin de distorsion (Overdrive/Pedal).",
+                patterns: [
+                    { name: "Mainstage 4/4", data: { kick: [0, 4, 8, 12], clap: [4, 12], ohat: [2, 6, 10, 14], chat: [0, 4, 8, 12] } },
+                    { name: "Millennium", data: { kick: [0, 2, 4, 8, 10, 12], clap: [4, 12], ride: [0,2,4,6,8,10,12,14] } }
+                ]
+            },
+            {
+                genre: "Peak Time", bpm: 142, kitMap: "techno",
+                tips: "Garde le kick très court (decay < 300ms) mais ajoute un effet de Rumble en sidechainant une reverb sur le kick. Les Rides font le travail d'énergie sur le drop.",
+                patterns: [
+                    { name: "Rumble Focus", data: { kick: [0, 4, 8, 12], ohat: [2, 6, 10, 14], clap: [4, 12], chat: [1, 5, 9, 13] } },
+                    { name: "Heavy Ride", data: { kick: [0, 4, 8, 12], ride: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], snare: [4, 12] } }
+                ]
+            },
+            {
+                genre: "Boom Bap / Rap", bpm: 90, kitMap: "boombap",
+                tips: "Désactive l'aimantation à la grille (grid) d'Ableton pour tes Hi-Hats, donne-leur du 'swing' en les retardant légèrement. Coupe les hautes fréquences du kick pour un son vintage.",
+                patterns: [
+                    { name: "Classic 90s", data: { kick: [0, 8, 11], snare: [4, 12], chat: [0, 2, 4, 6, 8, 10, 12, 14] } },
+                    { name: "J Dilla Swing", data: { kick: [0, 7, 10], snare: [4, 12], ohat: [2, 6, 10, 14], chat: [0, 4, 8, 12] } }
+                ]
+            },
+            {
+                genre: "Trap", bpm: 140, kitMap: "trap",
+                tips: "Laisse de l'espace. Le 808 fait office de basse et de kick. Allonge le Sustain/Decay de l'Osc A. Utilise des ratchets (répétitions rapides) sur les hi-hats pour dynamiser la boucle.",
+                patterns: [
+                    { name: "Standard Bounce", data: { kick: [0, 8, 10], snare: [4, 12], chat: [0,2,4,6, 8,10,12,14], ohat: [6, 14] } },
+                    { name: "Southside", data: { kick: [0, 2, 8, 11], clap: [4, 12], chat: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15] } }
+                ]
+            },
+            {
+                genre: "Drill", bpm: 142, kitMap: "trap",
+                tips: "Le rythme de Drill est caractérisé par sa snare/clap décalée. Au lieu d'être sur le 3ème temps régulier (pas 8), elle est souvent sur le pas 9 ou 10. Glisse les notes de ta basse 808.",
+                patterns: [
+                    { name: "UK Drill Syncop", data: { kick: [0, 8, 13], snare: [4, 9, 14], chat: [0,2, 5, 8,10, 13], perc: [6, 11] } },
+                    { name: "NY Bounce", data: { kick: [0, 10], snare: [4, 10, 14], chat: [0,2,3, 6,8,10,11, 14] } }
+                ]
+            },
+            {
+                genre: "Hyperpop", bpm: 160, kitMap: "hyperpop",
+                tips: "Utilise un Soft Clipper ou un Saturator très agressif sur le master. Les kicks doivent être minuscules et distordus (Decay < 150ms). Snares très synthétiques (beaucoup de FM).",
+                patterns: [
+                    { name: "Glitch Drive", data: { kick: [0, 4, 8, 12], snare: [4, 12], chat: [0,3,6,9,12,15], perc: [2, 10, 14] } },
+                    { name: "SOPHIE Style", data: { kick: [0, 3, 8], snare: [4, 12], ohat: [2, 6, 10, 14], perc: [1, 5, 9, 13] } }
+                ]
+            },
+            {
+                genre: "Lo-Fi Hip Hop", bpm: 80, kitMap: "boombap",
+                tips: "Pitch tes éléments de batterie vers le bas. Mets un filtre passe-bas sur quasiment tout. Ajoute du bruit de fond vinyle continu (Oscillateur Noise).",
+                patterns: [
+                    { name: "Chill Study", data: { kick: [0, 9], snare: [4, 12], chat: [0,3, 6,8, 11, 14] } },
+                    { name: "Drowsy Groove", data: { kick: [0, 7, 10], clap: [4, 12], chat: [0,4,8,12], ohat: [2, 14] } }
+                ]
+            },
+            {
+                genre: "K-Pop (Hybrid)", bpm: 125, kitMap: "kpop",
+                tips: "La K-Pop mélange souvent des couplets Trap et des refrains EDM/House. Les sons doivent être extrêmement 'clean' et punchy. Pas de basses qui bavent. Coupe les sub de tes snares.",
+                patterns: [
+                    { name: "EDM Chorus", data: { kick: [0, 4, 8, 12], clap: [4, 12], ohat: [2, 6, 10, 14], chat: [1,3, 5,7, 9,11, 13,15] } },
+                    { name: "Trap Verse", data: { kick: [0, 3, 8], snare: [4, 12], chat: [0,2,4,6,8,10,12,14], perc: [10, 14] } }
+                ]
+            },
+            {
+                genre: "Dubstep / Riddim", bpm: 140, kitMap: "trap",
+                tips: "Half-time absolu (Kick sur 0, Snare sur 8). L'espace entre les percussions est immense, laisse la place pour les 'Wobble Bass'. La caisse claire doit taper énormément (200Hz très boosté).",
+                patterns: [
+                    { name: "Half-Time Heavy", data: { kick: [0, 12], snare: [8], chat: [0,2,4,6, 8,10,12,14] } },
+                    { name: "Riddim Bounce", data: { kick: [0, 4], clap: [8], ohat: [2, 6, 10, 14] } }
+                ]
+            }
+        ];
+
+        const tracksDef = ["kick", "snare", "clap", "chat", "ohat", "perc", "ride"];
+        let cGen = 0, cPat = 0, patData = {}, currentKitData = {};
+
+        function init() {
+            const gSel = document.getElementById("genre-select");
+            const pSel = document.getElementById("pattern-select");
+            
+            database.forEach((g, i) => gSel.add(new Option(g.genre, i)));
+            
+            gSel.onchange = e => { 
+                cGen = e.target.value; cPat = 0; 
+                updateUI(); 
+            };
+            pSel.onchange = e => { cPat = e.target.value; loadPattern(); };
+            
+            // Render Headers
+            const th = document.getElementById("t-head");
+            for(let i=0; i<16; i++) th.innerHTML += `<div>${(i%4===0)?(i/4)+1:['e','&','a'][i%4-1]}</div>`;
+            
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById("bpm-val").innerText = database[cGen].bpm;
+            document.getElementById("genre-tips").innerText = database[cGen].tips;
+            
+            // Set current kit based on mapped genre
+            const kitName = database[cGen].kitMap || "techno";
+            currentKitData = kits[kitName];
+
+            updatePatterns();
+            loadOp("kick"); // Default load kick UI
+        }
+
+        function updatePatterns() {
+            const pSel = document.getElementById("pattern-select");
+            pSel.innerHTML = "";
+            database[cGen].patterns.forEach((p, i) => pSel.add(new Option(p.name, i)));
+            loadPattern();
+        }
+
+        function loadPattern() {
+            const d = database[cGen].patterns[cPat].data;
+            patData = {};
+            tracksDef.forEach(t => patData[t] = d[t] ? [...d[t]] : []);
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const tc = document.getElementById("tracks-container");
+            tc.innerHTML = "";
+            
+            tracksDef.forEach(tKey => {
+                const trkInfo = currentKitData[tKey];
+                let h = `<div class="track ${tKey}" id="track-row-${tKey}" onclick="loadOp('${tKey}')">
+                            <div class="track-name">${tKey}</div>
+                            <div class="steps" id="steps-${tKey}">`;
+                for(let i=0; i<16; i++) {
+                    const active = patData[tKey].includes(i) ? "active" : "";
+                    h += `<div class="step ${active}"></div>`;
+                }
+                h += `</div></div>`;
+                tc.innerHTML += h;
+            });
+            
+            // Default select kick if not already set visually
+            document.getElementById(`track-row-kick`).classList.add('selected');
+        }
+
+        function loadOp(tKey) {
+            // Update selected track styling
+            document.querySelectorAll('.track').forEach(el => el.classList.remove('selected'));
+            document.getElementById(`track-row-${tKey}`).classList.add('selected');
+
+            // Load the specific data for THIS style's kit
+            const r = currentKitData[tKey];
+            // get color from root variables mapping
+            const color = getComputedStyle(document.documentElement).getPropertyValue(`--${tKey}`).trim();
+            
+            document.getElementById("op-name").innerText = r.name;
+            document.getElementById("op-dot").style.background = color;
+            document.getElementById("op-dot").style.boxShadow = `0 0 10px ${color}`;
+            document.getElementById("algo-box").innerText = r.algo;
+            document.getElementById("op-desc").innerText = r.desc;
+            
+            // Osc A
+            document.getElementById("a-crs").innerText = r.oscA.crs;
+            document.getElementById("a-lvl").innerText = r.oscA.lvl;
+            document.getElementById("env-att").innerText = r.oscA.att;
+            document.getElementById("env-dec").innerText = r.oscA.dec;
+            document.getElementById("env-sus").innerText = r.oscA.sus;
+            document.getElementById("env-rel").innerText = r.oscA.rel;
+            document.getElementById("env-path").setAttribute("d", r.oscA.d);
+            
+            // Osc B
+            document.getElementById("b-crs").innerText = r.oscB.crs;
+            document.getElementById("b-lvl").innerText = r.oscB.lvl;
+            
+            // Filter / Pitch
+            document.getElementById("flt-type").innerText = r.flt.type;
+            document.getElementById("flt-freq").innerText = r.flt.freq;
+            document.getElementById("flt-res").innerText = r.flt.res;
+            document.getElementById("ptc-amt").innerText = r.ptc.amt;
+            document.getElementById("ptc-time").innerText = r.ptc.time;
+            
+            // Mod styling based on activity
+            if (r.oscB.crs !== "-") {
+                document.getElementById("mod-b").classList.add("active-mod");
+                document.getElementById("mod-b").classList.remove("disabled-mod");
+            } else {
+                document.getElementById("mod-b").classList.remove("active-mod");
+                document.getElementById("mod-b").classList.add("disabled-mod");
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
